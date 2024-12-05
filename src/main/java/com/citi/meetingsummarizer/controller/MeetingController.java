@@ -26,6 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/meetings")
 @RequiredArgsConstructor
+@CrossOrigin(origins = {"http://localhost:3000", "http://127.0.0.1:5001"})
 public class MeetingController {
     private final FileUploadService fileUploadService;
     private final SummarizationService summarizationService;
@@ -41,8 +42,6 @@ public class MeetingController {
         try {
             // Upload file
             String uploadedFilePath = fileUploadService.uploadFile(file);
-//            String fileName = file.getOriginalFilename();
-//            file.transferTo( new File("Storage"+fileName));
 
             // Create meeting record
             Meeting meeting = new Meeting();

@@ -20,7 +20,7 @@ public class ReportGenerationService {
     private String reportDir;
 
     public String generateEditableReport(Meeting meeting, String summarizedText) throws IOException {
-        // Create reports directory if not exists
+        // Create reports directory if it doesn't exist
         Path reportPath = Paths.get(reportDir).toAbsolutePath().normalize();
         Files.createDirectories(reportPath);
 
@@ -39,7 +39,7 @@ public class ReportGenerationService {
             headerRun.setFontSize(16);
             headerRun.setText("Citi Meeting Summary");
 
-            // Meeting Details
+            // Meeting Details Section
             XWPFParagraph detailsParagraph = document.createParagraph();
             XWPFRun detailsRun = detailsParagraph.createRun();
             detailsRun.setText("Meeting Title: " + meeting.getTitle());
@@ -55,8 +55,12 @@ public class ReportGenerationService {
             summaryTitleRun.setText("Meeting Summary");
 
             XWPFParagraph summaryParagraph = document.createParagraph();
+            summaryParagraph.setSpacingBefore(200); // Add spacing for better readability
             XWPFRun summaryRun = summaryParagraph.createRun();
-            summaryRun.setText(summarizedText);
+
+            // Extract and format the summarized text
+            String formattedSummary = formatSummaryText(summarizedText);
+            summaryRun.setText(formattedSummary);
 
             // Editable Notes Section
             XWPFParagraph notesTitleParagraph = document.createParagraph();
@@ -70,10 +74,48 @@ public class ReportGenerationService {
             notesPlaceholderRun.setColor("CCCCCC");
             notesPlaceholderRun.setText("Click here to add your notes...");
 
-            // Write the document
+            // Write the document to file
             document.write(out);
         }
 
         return targetLocation.toString();
     }
+
+    /**
+     * Formats the summarized text into a clean bullet-point structure.
+     *
+     * @param summarizedText The raw summarized text (may include JSON-like syntax or mixed delimiters).
+     * @return A formatted summary as bullet points.
+     */
+    private String formatSummaryText(String summarizedText) {
+        // Check if the input is in JSON format and contains a "summary" key
+        if (summarizedText.startsWith("{") && summarizedText.contains("\"summary\":")) {
+            int startIndex = summarizedText.indexOf("\"summary\":") + 10; // Start after "summary":
+            int endIndex = summarizedText.lastIndexOf("}");
+            if (startIndex < endIndex) {
+                summarizedText = summarizedText.substring(startIndex, endIndex).trim();
+            }
+        }
+
+        // Clean up JSON-like characters and whitespace
+        summarizedText = summarizedText.replaceAll("[{}\"']", "").trim();
+
+        // Replace literal \n characters with actual newlines for formatting
+        summarizedText = summarizedText.replace("\\n", "\n");
+
+        // Split the summarized text into individual lines based on common delimiters (newline, hyphen)
+        String[] summaryLines = summarizedText.split("\\n|-\\s");
+
+        // Build the bullet-point formatted summary
+        StringBuilder formattedSummary = new StringBuilder();
+        for (String line : summaryLines) {
+            if (!line.isBlank()) { // Ignore blank lines
+                formattedSummary.append("• ").append(line.trim()).append(System.lineSeparator()).append(System.lineSeparator());
+            }
+        }
+
+        return formattedSummary.toString().trim();
+    }
+
+
 }
